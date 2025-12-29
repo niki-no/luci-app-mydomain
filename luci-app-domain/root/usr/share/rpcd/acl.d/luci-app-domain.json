@@ -1,0 +1,11 @@
+{
+	"luci-app-domain": {
+		"description": "Grant UCI access for luci-app-domain",
+		"read": {
+			"uci": [ "domain", "ddns-go", "haproxy", "acme" ]
+		},
+		"write": {
+			"uci": [ "domain", "ddns-go", "haproxy", "acme" ]
+		}
+	}
+}

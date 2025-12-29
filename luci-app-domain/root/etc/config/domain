@@ -1,0 +1,4 @@
+# Default configuration for luci-app-domain
+
+config domain 'global'
+	option enabled '1'

@@ -1,0 +1,40 @@
+{
+    "admin/services/domain": {
+		"title": "域名管理",
+		"order": 58,
+		"action": {
+		     "type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-domain" ],
+			"uci": { "domain": true }
+		}
+    },
+
+    "admin/services/domain/ddns-go": {
+         "title": "动态域名",
+         "order": 10,
+         "action": {
+               "type": "view",
+               "path": "domain/ddns-go"
+             }
+    },
+    
+    "admin/services/domain/reverse-proxy": {
+         "title": "反代设置",
+         "order": 20,
+         "action": {
+               "type": "view",
+               "path": "domain/reverse-proxy"
+             }
+    },
+    
+    "admin/services/domain/certificate": {
+         "title": "证书设置",
+         "order": 30,
+         "action": {
+               "type": "view",
+               "path": "domain/certificate"
+             }
+    }
+}
