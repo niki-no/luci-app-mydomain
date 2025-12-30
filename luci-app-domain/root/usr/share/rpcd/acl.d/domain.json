@@ -1,0 +1,23 @@
+﻿{
+    "luci-app-domain": {
+        "description": "Grant access to luci-app-domain",
+        "read": {
+            "ubus": {
+                "luci": ["*"],
+                "file": ["exec", "read", "write", "list"],
+                "network.interface": ["*"],
+                "system": ["info", "process"]
+            },
+            "uci": ["domain"]
+        },
+        "write": {
+            "ubus": {
+                "luci": ["*"],
+                "file": ["exec", "read", "write", "list"],
+                "network.interface": ["*"],
+                "system": ["reboot", "upgrade", "watchdog", "signal"]
+            },
+            "uci": ["domain"]
+        }
+    }
+}

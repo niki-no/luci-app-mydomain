@@ -1,0 +1,482 @@
+<%+header%>
+<link rel="stylesheet" href="<%=media%>/css/domain.css" />
+<div class="cbi-map">
+    <h2 name="content"><%:增强型动态DNS%></h2>
+    <div class="cbi-map-descr">
+        <%:支持多种DNS服务商、IPv4/IPv6双栈、多个域名和实时监控。%>
+    </div>
+
+    <fieldset class="cbi-section">
+        <legend><%:全局设置%></legend>
+        <div class="cbi-section-node">
+            <div class="cbi-value">
+                <label class="cbi-label"><%:全局启用DDNS%></label>
+                <div class="cbi-value-field">
+                    <input type="checkbox" id="global_enabled" checked />
+                </div>
+            </div>
+            <div class="cbi-value">
+                <label class="cbi-label"><%:日志级别%></label>
+                <div class="cbi-value-field">
+                    <select id="global_log_level">
+                        <option value="debug"><%:调试%></option>
+                        <option value="info" selected><%:信息%></option>
+                        <option value="error"><%:错误%></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="cbi-section" id="domain-list-section">
+        <h3><%:域名配置列表%>
+            <a href="<%=url('admin/services/domain/domain/edit')%>" class="cbi-button cbi-button-add">
+                <%:添加%>
+            </a>
+        </h3>
+        
+        <div class="table-wrapper">
+            <table class="cbi-section-table domain-table">
+                <thead>
+                    <tr class="cbi-section-table-titles">
+                        <th class="cbi-section-table-cell" style="width: 5%">
+                            <input type="checkbox" id="select-all" />
+                        </th>
+                        <th class="cbi-section-table-cell" style="width: 20%"><%:服务提供商%></th>
+                        <th class="cbi-section-table-cell" style="width: 10%"><%:启用%></th>
+                        <th class="cbi-section-table-cell" style="width: 20%"><%:配置名称%></th>
+                        <th class="cbi-section-table-cell" style="width: 15%"><%:IP类型%></th>
+                        <th class="cbi-section-table-cell" style="width: 20%"><%:状态%></th>
+                        <th class="cbi-section-table-cell" style="width: 10%"><%:操作%></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                    local uci = require "luci.model.uci".cursor()
+                    local index = 0
+                    uci:foreach("domain", "domain", function(s)
+                        index = index + 1
+                        local subdomains = s.subdomains
+                        local domain_display = s.domain
+                        if subdomains and #subdomains > 0 then
+                            local subs = ""
+                            if type(subdomains) == "table" then
+                                for i, sub in ipairs(subdomains) do
+                                    subs = subs .. (i>1 and ", " or "") .. sub
+                                end
+                            else
+                                subs = subdomains
+                            end
+                            domain_display = string.format("%s (%s)", s.domain, subs)
+                        end
+                        
+                        local ip_type = ""
+                        if s.ipv4_enabled == "1" and s.ipv6_enabled == "1" then
+                            ip_type = translate("IPv4/IPv6双栈")
+                        elseif s.ipv4_enabled == "1" then
+                            ip_type = "IPv4"
+                        elseif s.ipv6_enabled == "1" then
+                            ip_type = "IPv6"
+                        else
+                            ip_type = translate("未启用")
+                        end
+                        
+                        local status_file = "/tmp/ddns_" .. s[".name"] .. ".status"
+                        local status = '<span class="status-pending">' .. translate("等待更新") .. '</span>'
+                        local f = io.open(status_file, "r")
+                        if f then
+                            local content = f:read("*all")
+                            f:close()
+                            if content:match("status:success") then
+                                local time = content:match("time:(.+)")
+                                status = '<span class="status-success">' .. translate("更新成功") .. 
+                                        ' (' .. (time or "") .. ')</span>'
+                            elseif content:match("status:failed") then
+                                status = '<span class="status-failed">' .. translate("更新失败") .. '</span>'
+                            elseif content:match("status:running") then
+                                status = '<span class="status-running">' .. translate("更新中") .. '</span>'
+                            end
+                        end
+                    %>
+                    <tr class="cbi-section-table-row" data-config-id="<%=s['.name']%>">
+                        <td class="cbi-section-table-cell">
+                            <input type="checkbox" name="selected" value="<%=s['.name']%>" />
+                        </td>
+                        <td class="cbi-section-table-cell">
+                            <div class="service-provider">
+                                <span class="provider-icon provider-<%=s.service or 'custom'%>"></span>
+                                <%=translate(string.upper(s.service or "custom"))%>
+                            </div>
+                        </td>
+                        <td class="cbi-section-table-cell">
+                            <label class="cbi-input-checkbox">
+                                <input type="checkbox" class="cbi-input-enable" 
+                                       data-config="<%=s['.name']%>" 
+                                       <%=s.enabled == "1" and "checked" or ""%> />
+                                <span class="toggle-switch"></span>
+                            </label>
+                        </td>
+                        <td class="cbi-section-table-cell domain-cell">
+                            <div class="domain-info">
+                                <strong><%=s.name or s['.name']%></strong><br>
+                                <small><%=domain_display%></small>
+                            </div>
+                        </td>
+                        <td class="cbi-section-table-cell">
+                            <span class="ip-type-badge <%=s.ipv4_enabled == "1" and "ipv4" or ""%> <%=s.ipv6_enabled == "1" and "ipv6" or ""%>">
+                                <%=ip_type%>
+                            </span>
+                        </td>
+                        <td class="cbi-section-table-cell status-cell">
+                            <div class="status-indicator" data-status="<%=s['.name']%>">
+                                <%=status%>
+                            </div>
+                            <div class="last-ip" style="display:none"></div>
+                        </td>
+                        <td class="cbi-section-table-cell">
+                            <div class="btn-group">
+                                <a href="<%=url('admin/services/domain/domain/edit', s['.name'])%>" 
+                                   class="cbi-button cbi-button-edit">
+                                    <%:编辑%>
+                                </a>
+                                <button class="cbi-button cbi-button-remove" 
+                                        onclick="deleteDomain('<%=s['.name']%>')">
+                                    <%:删除%>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <% end) %>
+                    
+                    <% if index == 0 then %>
+                    <tr class="cbi-section-table-row">
+                        <td colspan="7" class="cbi-section-table-cell" style="text-align: center; padding: 40px;">
+                            <div class="empty-state">
+                                <i class="icon-empty"></i>
+                                <p><%:暂无域名配置%></p>
+                                <a href="<%=url('admin/services/domain/domain/edit')%>" class="cbi-button cbi-button-add">
+                                    <%:添加新的域名配置%>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="cbi-section" id="bulk-actions-section">
+        <h3><%:批量操作%></h3>
+        <div class="cbi-section-node">
+            <button class="cbi-button cbi-button-positive" onclick="bulkEnable()">
+                <i class="icon-enable"></i> <%:批量启用%>
+            </button>
+            <button class="cbi-button cbi-button-neutral" onclick="bulkDisable()">
+                <i class="icon-disable"></i> <%:批量禁用%>
+            </button>
+            <button class="cbi-button cbi-button-action" onclick="bulkUpdate()">
+                <i class="icon-update"></i> <%:批量更新%>
+            </button>
+            <button class="cbi-button cbi-button-download" onclick="exportConfig()">
+                <i class="icon-export"></i> <%:导出配置%>
+            </button>
+            <button class="cbi-button cbi-button-upload" onclick="importConfig()">
+                <i class="icon-import"></i> <%:导入配置%>
+            </button>
+        </div>
+    </div>
+
+    <div class="cbi-section" id="quick-stats-section">
+        <h3><%:快速统计%></h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-domains">0</div>
+                <div class="stat-label"><%:总域名数%></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="enabled-domains">0</div>
+                <div class="stat-label"><%:已启用数%></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="successful-updates">0</div>
+                <div class="stat-label"><%:成功更新数%></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="failed-updates">0</div>
+                <div class="stat-label"><%:失败更新数%></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cbi-section" id="recent-logs-section" style="display: none;">
+        <h3><%:最近日志%> <button class="cbi-button cbi-button-refresh" onclick="refreshLogs()">刷新</button></h3>
+        <div class="log-viewer" id="recent-logs">
+            <pre><%:加载中...%></pre>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=media%>/js/domain-enhanced.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 更新统计信息
+    updateStats();
+    
+    // 全选/取消全选功能
+    document.getElementById('select-all').addEventListener('change', function(e) {
+        const checkboxes = document.querySelectorAll('input[name="selected"]');
+        checkboxes.forEach(cb => cb.checked = e.target.checked);
+    });
+    
+    // 监听启用状态切换
+    document.querySelectorAll('.cbi-input-enable').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const configId = this.getAttribute('data-config');
+            const enabled = this.checked ? '1' : '0';
+            
+            fetch('<%=url("admin/services/domain/toggle_enable")%>', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: configId, enabled: enabled})
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      updateStats();
+                  }
+              });
+        });
+    });
+    
+    // 启动状态轮询
+    startStatusPolling();
+});
+
+function deleteDomain(configId) {
+    if (confirm('<%:确定要删除此域名配置吗？此操作不可撤销。%>')) {
+        fetch('<%=url("admin/services/domain/delete_domain")%>/' + configId, {
+            method: 'DELETE'
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  location.reload();
+              } else {
+                  alert('<%:删除失败%>' + (data.error || ''));
+              }
+          });
+    }
+}
+
+function updateStats() {
+    fetch('<%=url("admin/services/domain/get_stats")%>')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-domains').textContent = data.total || 0;
+            document.getElementById('enabled-domains').textContent = data.enabled || 0;
+            document.getElementById('successful-updates').textContent = data.successful || 0;
+            document.getElementById('failed-updates').textContent = data.failed || 0;
+            
+            // 如果有失败的更新，显示最近日志区域
+            if (data.failed > 0) {
+                document.getElementById('recent-logs-section').style.display = 'block';
+                refreshLogs();
+            }
+        });
+}
+
+function startStatusPolling() {
+    // 更新所有域名的状态
+    function updateAllStatus() {
+        document.querySelectorAll('.status-indicator').forEach(function(element) {
+            const configId = element.getAttribute('data-status');
+            if (configId) {
+                updateSingleStatus(configId, element);
+            }
+        });
+    }
+    
+    // 初始更新一次所有状态
+    updateAllStatus();
+    
+    // 每30秒自动更新一次
+    setInterval(updateAllStatus, 30000);
+}
+
+function updateSingleStatus(configId, element) {
+    fetch('<%=url("admin/services/domain/get_status")%>/' + configId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                element.innerHTML = '<span class="status-success">' + 
+                    (data.message || '<%:更新成功%>') + '</span>';
+                
+                // 显示IP地址信息
+                const ipElement = element.nextElementSibling;
+                if (ipElement && data.ip) {
+                    ipElement.textContent = 'IP: ' + data.ip;
+                    ipElement.style.display = 'block';
+                }
+            } else if (data.status === 'failed') {
+                element.innerHTML = '<span class="status-failed">' + 
+                    (data.message || '<%:更新失败%>') + '</span>';
+            } else if (data.status === 'running') {
+                element.innerHTML = '<span class="status-running">' + 
+                    (data.message || '<%:更新中%>') + '</span>';
+            }
+        });
+}
+
+function refreshLogs() {
+    fetch('<%=url("admin/services/domain/get_recent_logs")%>')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('recent-logs').innerHTML = '<pre>' + 
+                (data || '<%:暂无日志内容%>') + '</pre>';
+        });
+}
+
+// 批量操作函数
+function bulkEnable() {
+    const selected = getSelectedConfigs();
+    if (selected.length === 0) {
+        alert('<%:请至少选择一个域名配置进行操作！%>');
+        return;
+    }
+    
+    if (confirm('<%:确定要启用选中的%> ' + selected.length + ' <%:个域名配置吗？%>')) {
+        fetch('<%=url("admin/services/domain/bulk_enable")%>', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: selected})
+        }).then(() => location.reload());
+    }
+}
+
+function bulkDisable() {
+    const selected = getSelectedConfigs();
+    if (selected.length === 0) {
+        alert('<%:请至少选择一个域名配置进行操作！%>');
+        return;
+    }
+    
+    if (confirm('<%:确定要禁用选中的%> ' + selected.length + ' <%:个域名配置吗？%>')) {
+        fetch('<%=url("admin/services/domain/bulk_disable")%>', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: selected})
+        }).then(() => location.reload());
+    }
+}
+
+function bulkUpdate() {
+    const selected = getSelectedConfigs();
+    if (selected.length === 0) {
+        alert('<%:请至少选择一个域名配置进行操作！%>');
+        return;
+    }
+    
+    if (confirm('<%:确定要立即更新选中的%> ' + selected.length + ' <%:个域名配置吗？%>')) {
+        showLoading('<%:正在更新域名配置...%>');
+        
+        fetch('<%=url("admin/services/domain/bulk_update")%>', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: selected})
+        }).then(response => response.json())
+          .then(data => {
+              hideLoading();
+              alert('<%:批量更新完成，成功%> ' + data.success + '<%:个，失败%> ' + data.failed + '<%:个%>');
+              location.reload();
+          });
+    }
+}
+
+function getSelectedConfigs() {
+    const checkboxes = document.querySelectorAll('input[name="selected"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function exportConfig() {
+    fetch('<%=url("admin/services/domain/export_config")%>')
+        .then(response => response.json())
+        .then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ddns-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+}
+
+function importConfig() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const config = JSON.parse(e.target.result);
+            
+            if (confirm('<%:确定要导入配置文件吗？这将覆盖现有配置。%>')) {
+                fetch('<%=url("admin/services/domain/import_config")%>', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                }).then(() => location.reload());
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+function showLoading(message) {
+    let loading = document.getElementById('loading-overlay');
+    if (!loading) {
+        loading = document.createElement('div');
+        loading.id = 'loading-overlay';
+        loading.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        loading.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 8px; text-align: center; min-width: 200px;">
+                <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+                <p style="margin: 0; color: #333;">${message || '<%:处理中...%>'}</p>
+            </div>
+        `;
+        document.body.appendChild(loading);
+    }
+}
+
+function hideLoading() {
+    const loading = document.getElementById('loading-overlay');
+    if (loading) {
+        loading.remove();
+    }
+}
+</script>
+
+<%+footer%>

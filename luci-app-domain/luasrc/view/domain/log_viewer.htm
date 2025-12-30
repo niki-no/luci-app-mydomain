@@ -1,0 +1,463 @@
+<%+header%>
+<link rel="stylesheet" href="<%=media%>/css/domain.css" />
+<div class="cbi-map">
+    <h2 name="content"><%:DDNS日志查看器%></h2>
+    <div class="cbi-map-descr">
+        <%:查看和管理DDNS更新日志，支持按配置、级别、时间范围过滤和搜索。%>
+    </div>
+
+    <fieldset class="cbi-section">
+        <legend><%:日志过滤%></legend>
+        <div class="cbi-section-node">
+            <div class="filter-controls">
+                <div class="cbi-value">
+                    <label class="cbi-label"><%:配置选择%></label>
+                    <div class="cbi-value-field">
+                        <select id="log-config-select">
+                            <option value="all"><%:所有配置%></option>
+                            <% 
+                            local uci = require "luci.model.uci".cursor()
+                            uci:foreach("domain", "domain", function(s)
+                            %>
+                            <option value="<%=s['.name']%>"><%=s.name or s['.name']%> (<%=s.domain%>)</option>
+                            <% end) %>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="cbi-value">
+                    <label class="cbi-label"><%:日志级别%></label>
+                    <div class="cbi-value-field">
+                        <select id="log-level-select" multiple="multiple" style="height: 100px">
+                            <option value="debug" selected><%:调试%></option>
+                            <option value="info" selected><%:信息%></option>
+                            <option value="error" selected><%:错误%></option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="cbi-value">
+                    <label class="cbi-label"><%:时间范围%></label>
+                    <div class="cbi-value-field">
+                        <input type="datetime-local" id="log-start-time" />
+                        <span style="margin: 0 10px;">至</span>
+                        <input type="datetime-local" id="log-end-time" />
+                    </div>
+                </div>
+                
+                <div class="cbi-value">
+                    <label class="cbi-label"><%:关键字搜索%></label>
+                    <div class="cbi-value-field">
+                        <input type="text" id="log-keyword" placeholder="<%:输入关键字搜索...%>" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cbi-value cbi-value-last">
+                <div class="cbi-value-field">
+                    <button class="cbi-button cbi-button-apply" onclick="applyFilters()">
+                        <i class="icon-filter"></i> <%:应用过滤%>
+                    </button>
+                    <button class="cbi-button" onclick="clearFilters()">
+                        <i class="icon-clear"></i> <%:清除过滤%>
+                    </button>
+                    <button class="cbi-button cbi-button-download" onclick="downloadLogs()">
+                        <i class="icon-download"></i> <%:下载日志%>
+                    </button>
+                    <button class="cbi-button cbi-button-remove" onclick="clearAllLogs()">
+                        <i class="icon-trash"></i> <%:清除所有日志%>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="cbi-section">
+        <h3>
+            <%:日志内容%>
+            <span class="log-controls">
+                <label style="margin-right: 15px;">
+                    <input type="checkbox" id="auto-refresh" checked /> <%:自动刷新%>
+                </label>
+                <button class="cbi-button cbi-button-refresh" onclick="refreshLogs()">
+                    <i class="icon-refresh"></i> <%:刷新%>
+                </button>
+                <button class="cbi-button" onclick="scrollToBottom()">
+                    <i class="icon-bottom"></i> <%:滚动到底部%>
+                </button>
+                <button class="cbi-button" onclick="copyLogs()">
+                    <i class="icon-copy"></i> <%:复制日志%>
+                </button>
+            </span>
+        </h3>
+        
+        <div class="log-viewer-container">
+            <div class="log-viewer-header">
+                <span><%:时间%></span>
+                <span><%:配置%></span>
+                <span><%:级别%></span>
+                <span><%:消息%></span>
+            </div>
+            <div class="log-viewer-content" id="log-content">
+                <div class="log-placeholder">
+                    <i class="icon-loading"></i>
+                    <%:正在加载日志内容...%>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-pagination">
+            <button class="cbi-button" onclick="prevPage()" id="prev-btn" disabled>
+                <i class="icon-prev"></i> <%:上一页%>
+            </button>
+            <span class="page-info" id="page-info">第 1 页，共 1 页</span>
+            <button class="cbi-button" onclick="nextPage()" id="next-btn" disabled>
+                <%:下一页%> <i class="icon-next"></i>
+            </button>
+            <span class="page-size">
+                <%:每页显示%>
+                <select id="page-size" onchange="changePageSize()">
+                    <option value="50">50</option>
+                    <option value="100" selected>100</option>
+                    <option value="200">200</option>
+                    <option value="500">500</option>
+                </select>
+            </span>
+        </div>
+    </div>
+
+    <div class="cbi-section">
+        <h3><%:日志统计%></h3>
+        <div class="log-stats">
+            <div class="stat-item">
+                <span class="stat-label"><%:总日志数%></span>
+                <span class="stat-value" id="total-logs">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><%:信息级日志%></span>
+                <span class="stat-value info-count" id="info-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><%:错误级日志%></span>
+                <span class="stat-value error-count" id="error-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><%:今日日志%></span>
+                <span class="stat-value" id="today-logs">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script>
+// 日志查看器变量
+let currentPage = 1;
+let totalPages = 1;
+let pageSize = 100;
+let autoRefreshInterval = null;
+let currentFilters = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认时间范围为过去24小时
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    document.getElementById('log-start-time').value = formatDateTime(yesterday);
+    document.getElementById('log-end-time').value = formatDateTime(now);
+    
+    // 加载日志内容
+    loadLogs();
+    
+    // 设置自动刷新
+    const autoRefreshCheckbox = document.getElementById('auto-refresh');
+    if (autoRefreshCheckbox.checked) {
+        startAutoRefresh();
+    }
+    
+    autoRefreshCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    // 添加过滤器事件监听
+    document.getElementById('log-config-select').addEventListener('change', applyFilters);
+    document.getElementById('log-keyword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+});
+
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function applyFilters() {
+    currentPage = 1;
+    
+    currentFilters = {
+        config: document.getElementById('log-config-select').value,
+        levels: Array.from(document.getElementById('log-level-select').selectedOptions).map(opt => opt.value),
+        startTime: document.getElementById('log-start-time').value,
+        endTime: document.getElementById('log-end-time').value,
+        keyword: document.getElementById('log-keyword').value.trim()
+    };
+    
+    loadLogs();
+}
+
+function clearFilters() {
+    document.getElementById('log-config-select').value = 'all';
+    document.getElementById('log-level-select').querySelectorAll('option').forEach(opt => opt.selected = true);
+    
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    document.getElementById('log-start-time').value = formatDateTime(yesterday);
+    document.getElementById('log-end-time').value = formatDateTime(now);
+    document.getElementById('log-keyword').value = '';
+    
+    applyFilters();
+}
+
+function loadLogs() {
+    showLoading('<%:正在加载日志内容...%>');
+    
+    const params = new URLSearchParams({
+        page: currentPage,
+        pageSize: pageSize,
+        ...currentFilters
+    });
+    
+    fetch('<%=url("admin/services/domain/get_logs")%>?' + params.toString())
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            displayLogs(data.logs || []);
+            updatePagination(data.total || 0, data.page || 1, data.totalPages || 1);
+            updateStats(data.stats || {});
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Failed to load logs:', error);
+        });
+}
+
+function displayLogs(logs) {
+    const container = document.getElementById('log-content');
+    
+    if (logs.length === 0) {
+        container.innerHTML = `
+            <div class="log-empty">
+                <i class="icon-empty"></i>
+                <p><%:没有找到匹配的日志记录。请尝试调整过滤条件。%></p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    logs.forEach(log => {
+        const levelClass = `log-level-${log.level || 'info'}`;
+        const time = log.time ? new Date(log.time).toLocaleString() : '';
+        
+        html += `
+            <div class="log-entry ${levelClass}">
+                <span class="log-time">${time}</span>
+                <span class="log-config">${log.config || '-'}</span>
+                <span class="log-level">
+                    <span class="level-badge ${levelClass}">${log.level || 'INFO'}</span>
+                </span>
+                <span class="log-message">${escapeHtml(log.message || '')}</span>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    scrollToBottom();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updatePagination(total, page, totalPages) {
+    document.getElementById('page-info').textContent = 
+        `<%:第%> ${page} <%:页，共%> ${totalPages} <%:页%> (${total} <%:条日志%>)`;
+    
+    document.getElementById('prev-btn').disabled = page <= 1;
+    document.getElementById('next-btn').disabled = page >= totalPages;
+    
+    currentPage = page;
+    totalPages = totalPages;
+}
+
+function updateStats(stats) {
+    document.getElementById('total-logs').textContent = stats.total || 0;
+    document.getElementById('info-count').textContent = stats.info || 0;
+    document.getElementById('error-count').textContent = stats.error || 0;
+    document.getElementById('today-logs').textContent = stats.today || 0;
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadLogs();
+    }
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadLogs();
+    }
+}
+
+function changePageSize() {
+    pageSize = parseInt(document.getElementById('page-size').value);
+    currentPage = 1;
+    loadLogs();
+}
+
+function refreshLogs() {
+    loadLogs();
+}
+
+function scrollToBottom() {
+    const container = document.querySelector('.log-viewer-content');
+    container.scrollTop = container.scrollHeight;
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    autoRefreshInterval = setInterval(loadLogs, 5000);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+function copyLogs() {
+    const logEntries = document.querySelectorAll('.log-entry');
+    const logText = Array.from(logEntries)
+        .map(entry => {
+            const time = entry.querySelector('.log-time').textContent;
+            const config = entry.querySelector('.log-config').textContent;
+            const level = entry.querySelector('.level-badge').textContent;
+            const message = entry.querySelector('.log-message').textContent;
+            return `[${time}] [${config}] [${level}] ${message}`;
+        })
+        .join('\n');
+    
+    navigator.clipboard.writeText(logText)
+        .then(() => alert('<%:日志已复制到剪贴板%>'))
+        .catch(() => alert('<%:复制日志失败，请手动复制%>'));
+}
+
+function downloadLogs() {
+    showLoading('<%:正在准备下载日志文件...%>');
+    
+    const params = new URLSearchParams({
+        ...currentFilters,
+        download: '1'
+    });
+    
+    fetch('<%=url("admin/services/domain/get_logs")%>?' + params.toString())
+        .then(response => response.blob())
+        .then(blob => {
+            hideLoading();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ddns-logs-${new Date().toISOString().split('T')[0]}.log`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Failed to download logs:', error);
+            alert('<%:下载日志失败%>');
+        });
+}
+
+function clearAllLogs() {
+    if (confirm('<%:确定要清除所有日志记录吗？此操作不可撤销。%>')) {
+        showLoading('<%:正在清除所有日志记录...%>');
+        
+        fetch('<%=url("admin/services/domain/clear_logs")%>', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                alert('<%:日志清除成功%>');
+                loadLogs();
+            } else {
+                alert('<%:清除日志失败%>' + (data.error || ''));
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            alert('<%:清除日志失败%>');
+        });
+    }
+}
+
+function showLoading(message) {
+    let loading = document.getElementById('loading-overlay');
+    if (!loading) {
+        loading = document.createElement('div');
+        loading.id = 'loading-overlay';
+        loading.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        loading.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 8px; text-align: center; min-width: 200px;">
+                <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+                <p style="margin: 0; color: #333;">${message || '<%:处理中...%>'}</p>
+            </div>
+        `;
+        document.body.appendChild(loading);
+    }
+}
+
+function hideLoading() {
+    const loading = document.getElementById('loading-overlay');
+    if (loading) {
+        loading.remove();
+    }
+}
+</script>
+
+<%+footer%>
