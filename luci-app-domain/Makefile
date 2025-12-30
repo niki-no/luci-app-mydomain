@@ -44,56 +44,56 @@ define Package/luci-app-domain/config
 endef
 
 define Package/luci-app-domain/install
-    # 安装基础文件
-    $(INSTALL_DIR) $(1)/usr/lib/lua/luci
-    cp -pR ./luasrc/* $(1)/usr/lib/lua/luci/
-    
-    # 静态资源
-    $(INSTALL_DIR) $(1)/www/luci-static/resources/domain
-    $(INSTALL_DATA) ./htdocs/*.css $(1)/www/luci-static/resources/domain/
-    $(INSTALL_DATA) ./htdocs/*.js $(1)/www/luci-static/resources/domain/
-    
-    # 配置文件
-    $(INSTALL_DIR) $(1)/etc/config
-    $(INSTALL_CONF) ./root/etc/config/domain $(1)/etc/config/
-    
-    # 初始化脚本
-    $(INSTALL_DIR) $(1)/etc/init.d
-    $(INSTALL_BIN) ./root/etc/init.d/domain $(1)/etc/init.d/
-    
-    # 可执行文件
-    $(INSTALL_DIR) $(1)/usr/bin
-    $(INSTALL_BIN) ./root/usr/bin/domain* $(1)/usr/bin/
-    
-    # 数据目录
-    $(INSTALL_DIR) $(1)/etc/domain/{certs,data,backup,logs,tmp}
-    
-    # 设置权限
-    find $(1)/etc/init.d -type f -exec chmod 755 {} +
-    find $(1)/usr/bin -type f -exec chmod 755 {} +
-    find $(1)/etc/config -type f -exec chmod 644 {} +
-    find $(1)/etc/domain -type d -exec chmod 750 {} +
-    chmod 700 $(1)/etc/domain/certs
+	# 安装基础文件
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci
+	cp -pR ./luasrc/* $(1)/usr/lib/lua/luci/
+	
+	# 静态资源
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/domain
+	$(INSTALL_DATA) ./htdocs/*.css $(1)/www/luci-static/resources/domain/
+	$(INSTALL_DATA) ./htdocs/*.js $(1)/www/luci-static/resources/domain/
+	
+	# 配置文件
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./root/etc/config/domain $(1)/etc/config/
+	
+	# 初始化脚本
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./root/etc/init.d/domain $(1)/etc/init.d/
+	
+	# 可执行文件
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./root/usr/bin/domain* $(1)/usr/bin/
+	
+	# 数据目录
+	$(INSTALL_DIR) $(1)/etc/domain/{certs,data,backup,logs,tmp}
+	
+	# 设置权限
+	find $(1)/etc/init.d -type f -exec chmod 755 {} \;
+	find $(1)/usr/bin -type f -exec chmod 755 {} \;
+	find $(1)/etc/config -type f -exec chmod 644 {} \;
+	find $(1)/etc/domain -type d -exec chmod 750 {} \;
+	chmod 700 $(1)/etc/domain/certs
 endef
 
 define Package/luci-app-domain/postinst
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] || {
-    # 初始化配置
-    if [ ! -s /etc/config/domain ]; then
-        uci import domain < /dev/null
-        uci set domain.global.enabled=1
-        uci set domain.global.version="1.0.0"
-        uci commit domain
-    fi
-    
-    # 启用服务
-    /etc/init.d/domain enable
-    uci -q get domain.global.enabled | grep -q "1" && /etc/init.d/domain start
-    
-    # 清理缓存
-    rm -f /tmp/luci-*cache* 2>/dev/null
-    echo "DOMAIN LuCI app installed. Access at: LuCI → Services → DOMAIN"
+	# 初始化配置
+	if [ ! -s /etc/config/domain ]; then
+		uci import domain < /dev/null
+		uci set domain.global.enabled=1
+		uci set domain.global.version="1.0.0"
+		uci commit domain
+	fi
+	
+	# 启用服务
+	/etc/init.d/domain enable
+	uci -q get domain.global.enabled | grep -q "1" && /etc/init.d/domain start
+	
+	# 清理缓存
+	rm -f /tmp/luci-*cache* 2>/dev/null
+	echo "DOMAIN LuCI app installed. Access at: LuCI → Services → DOMAIN"
 }
 exit 0
 endef
@@ -101,15 +101,15 @@ endef
 define Package/luci-app-domain/prerm
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] || {
-    /etc/init.d/domain stop 2>/dev/null
-    /etc/init.d/domain disable 2>/dev/null
+	/etc/init.d/domain stop 2>/dev/null
+	/etc/init.d/domain disable 2>/dev/null
 }
 endef
 
 define Package/luci-app-domain/postrm
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] || {
-    rm -f /tmp/luci-*cache* 2>/dev/null
+	rm -f /tmp/luci-*cache* 2>/dev/null
 }
 endef
 
