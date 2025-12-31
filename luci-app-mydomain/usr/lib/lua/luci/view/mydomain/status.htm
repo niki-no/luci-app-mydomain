@@ -1,0 +1,63 @@
+<%+header%>
+
+<h2><%:MyDomain Status%></h2>
+
+<fieldset class="cbi-section">
+  <legend><%:Dynamic DNS Status%></legend>
+  <table class="table">
+    <tr class="tr table-titles">
+      <th class="th"><%:Name%></th>
+      <th class="th"><%:Domain%></th>
+      <th class="th"><%:Status%></th>
+      <th class="th"><%:Enabled%></th>
+    </tr>
+    <% for _, ddns in ipairs(data.ddns) do %>
+    <tr class="tr">
+      <td class="td"><%=ddns.name%></td>
+      <td class="td"><%=ddns.domain%></td>
+      <td class="td"><%=ddns.status%></td>
+      <td class="td"><%=ddns.enabled == "1" and translate("Yes") or translate("No")%></td>
+    </tr>
+    <% end %>
+  </table>
+</fieldset>
+
+<fieldset class="cbi-section">
+  <legend><%:Reverse Proxy Status%></legend>
+  <table class="table">
+    <tr class="tr table-titles">
+      <th class="th"><%:Name%></th>
+      <th class="th"><%:Frontend Port%></th>
+      <th class="th"><%:Backend URL%></th>
+      <th class="th"><%:Enabled%></th>
+    </tr>
+    <% for _, proxy in ipairs(data.proxy) do %>
+    <tr class="tr">
+      <td class="td"><%=proxy.name%></td>
+      <td class="td"><%=proxy.frontend%></td>
+      <td class="td"><%=proxy.backend%></td>
+      <td class="td"><%=proxy.enabled == "1" and translate("Yes") or translate("No")%></td>
+    </tr>
+    <% end %>
+  </table>
+</fieldset>
+
+<fieldset class="cbi-section">
+  <legend><%:Certificate Status%></legend>
+  <table class="table">
+    <tr class="tr table-titles">
+      <th class="th"><%:Name%></th>
+      <th class="th"><%:Domain%></th>
+      <th class="th"><%:Status%></th>
+    </tr>
+    <% for _, cert in ipairs(data.cert) do %>
+    <tr class="tr">
+      <td class="td"><%=cert.name%></td>
+      <td class="td"><%=cert.domain%></td>
+      <td class="td"><%=cert.status%></td>
+    </tr>
+    <% end %>
+  </table>
+</fieldset>
+
+<%+footer%>
