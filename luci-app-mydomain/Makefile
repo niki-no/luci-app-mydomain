@@ -1,3 +1,4 @@
+# package/luci-app-mydomain/Makefile
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-mydomain
@@ -28,12 +29,12 @@ define Build/Compile
 endef
 
 define Package/luci-app-mydomain/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci
-	$(CP) ./htdocs $(1)/www/luci-static/
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DATA) ./usr/lib/lua/luci/controller/mydomain.lua $(1)/usr/lib/lua/luci/controller/mydomain.lua
+	$(INSTALL_DATA) ./luasrc/controller/mydomain.lua $(1)/usr/lib/lua/luci/controller/mydomain.lua
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/mydomain
-	$(INSTALL_DATA) ./usr/lib/lua/luci/view/mydomain/*.htm $(1)/usr/lib/lua/luci/view/mydomain/
+	$(INSTALL_DATA) ./luasrc/view/mydomain/status.htm $(1)/usr/lib/lua/luci/view/mydomain/status.htm
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mydomain
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/*.js $(1)/www/luci-static/resources/view/mydomain/
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./root/etc/config/mydomain $(1)/etc/config/mydomain
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -47,6 +48,5 @@ define Package/luci-app-mydomain/install
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
 	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/luci-app-mydomain.json $(1)/usr/share/rpcd/acl.d/luci-app-mydomain.json
 endef
-
 
 $(eval $(call BuildPackage,luci-app-mydomain))
