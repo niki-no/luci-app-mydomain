@@ -1,6 +1,6 @@
-# luci-app-domain
+# luci-app-mydomain
 
-luci-app-domain 是一个用于 OpenWrt LuCI 的域名管理应用，提供动态 DNS 管理、反向代理配置和 SSL/TLS 证书管理等功能。
+luci-app-mydomain 是一个用于 OpenWrt LuCI 的域名管理应用，提供动态 DNS 管理、反向代理配置和 SSL/TLS 证书管理等功能。
 
 ## 功能特性
 
@@ -44,12 +44,12 @@ luci-app-domain 是一个用于 OpenWrt LuCI 的域名管理应用，提供动�
 ### 从源码编译安装
 1. 将项目克隆到 OpenWrt SDK 的 package 目录
 2. 运行 `make menuconfig`
-3. 在 `LuCI -> Applications` 中选择 `luci-app-domain`
+3. 在 `LuCI -> Applications` 中选择 `luci-app-mydomain`
 4. 编译固件或单独编译包
 
 ### 直接安装 IPK 包
 1. 下载适合您设备的 IPK 包
-2. 运行 `opkg install luci-app-domain_1.0.0_all.ipk`
+2. 运行 `opkg install luci-app-mydomain_1.0.0_all.ipk`
 3. 安装完成后在 LuCI 界面中配置
 
 ## 使用说明
