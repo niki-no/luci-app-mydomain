@@ -34,7 +34,11 @@ define Package/luci-app-mydomain/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/mydomain
 	$(INSTALL_DATA) ./luasrc/view/mydomain/status.htm $(1)/usr/lib/lua/luci/view/mydomain/status.htm
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mydomain
-	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/*.js $(1)/www/luci-static/resources/view/mydomain/
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/ddns.js $(1)/www/luci-static/resources/view/mydomain/ddns.js
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/proxy.js $(1)/www/luci-static/resources/view/mydomain/proxy.js
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/cert.js $(1)/www/luci-static/resources/view/mydomain/cert.js
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/status.js $(1)/www/luci-static/resources/view/mydomain/status.js
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain.js $(1)/www/luci-static/resources/view/mydomain.js
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./root/etc/config/mydomain $(1)/etc/config/mydomain
 	$(INSTALL_DIR) $(1)/etc/init.d
