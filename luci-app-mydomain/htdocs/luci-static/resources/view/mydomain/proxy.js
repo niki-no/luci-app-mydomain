@@ -39,10 +39,10 @@ return view.extend({
 		o = s.option(form.Value, 'cert', _('SSL Certificate'));
 		o.depends('protocol', 'https');
 		// 获取证书配置
-		L.resolveDefault(fs.list('/etc/ssl/certs/')).then(function(files) {
+		L.resolveDefault(LFS.list('/etc/ssl/certs/')).then(function(files) {
 			if (files) {
 				files.forEach(function(file) {
-					if (file.name.endsWith('.crt')) {
+					if (file.name && file.name.endsWith('.crt')) {
 						o.value(file.name.replace('.crt', ''), file.name);
 					}
 				});
