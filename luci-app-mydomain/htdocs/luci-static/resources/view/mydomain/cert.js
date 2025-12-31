@@ -1,4 +1,3 @@
-// package/luci-app-mydomain/htdocs/luci-static/resources/view/mydomain/cert.js
 'use strict';
 'require view';
 'require ui';
