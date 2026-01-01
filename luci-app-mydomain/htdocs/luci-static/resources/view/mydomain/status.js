@@ -3,6 +3,7 @@
 'require rpc';
 'require dom';
 'require ui';
+'require uci';
 
 var callServiceList = rpc.declare({
 	object: 'service',
@@ -12,7 +13,11 @@ var callServiceList = rpc.declare({
 });
 
 function getServiceStatus() {
-	return L.resolveDefault(callServiceList('mydomain'), {});
+	return callServiceList('mydomain').then(function(result) {
+		return result || {};
+	}).catch(function() {
+		return {};
+	});
 }
 
 return view.extend({
@@ -20,7 +25,11 @@ return view.extend({
 		var table = E('div', { 'class': 'table' });
 
 		return Promise.all([
-			L.resolveDefault(uci.load('mydomain'), {}),
+			uci.load('mydomain').then(function(result) {
+				return result || {};
+			}).catch(function() {
+				return {};
+			}),
 			getServiceStatus()
 		]).then(function(data) {
 			var mydomain = data[0];
