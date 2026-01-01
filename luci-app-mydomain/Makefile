@@ -14,7 +14,7 @@ define Package/luci-app-mydomain
   CATEGORY:=LuCI
   SUBMENU:=3. Applications
   TITLE:=LuCI Support for MyDomain Manager
-  DEPENDS:=+luci-base +haproxy +acme +acme-dnsapi +curl +wget +ca-certificates +openssl-util
+  DEPENDS:=+luci-base +haproxy +acme +curl +wget +ca-certificates +openssl-util
   PKGARCH:=all
 endef
 
@@ -54,3 +54,4 @@ define Package/luci-app-mydomain/install
 endef
 
 $(eval $(call BuildPackage,luci-app-mydomain))
+
