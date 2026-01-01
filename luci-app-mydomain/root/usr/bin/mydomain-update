@@ -116,20 +116,6 @@ update_custom() {
 
 config_load mydomain
 
-config_foreach() {
-    local cfg_type="$1"
-    shift
-    local func="$1"
-    shift
-    local section=""
-    local cfg_sections=""
-    
-    config_list_foreach "$cfg_type" "section" section
-    for section in $cfg_sections; do
-        eval $func "$section"
-    done
-}
-
 update_ddns_entry() {
     local cfg="$1"
     
