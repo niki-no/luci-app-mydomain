@@ -7,9 +7,6 @@ PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
-include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/feeds/luci/luci.mk
-
 define Package/luci-app-mydomain
   SECTION:=luci
   CATEGORY:=LuCI
@@ -33,7 +30,7 @@ define Package/luci-app-mydomain/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DATA) ./luasrc/controller/mydomain.lua $(1)/usr/lib/lua/luci/controller/mydomain.lua
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/mydomain
-	$(INSTALL_DATA) ./luasrc/view/mydomain/status.htm $(1)/usr/lib/lua/luci/view/mydomain/status.htm
+	$(INSTALL_DATA) ./luasrc/view/mydomain/index.htm $(1)/usr/lib/lua/luci/view/mydomain/index.htm
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mydomain
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/ddns.js $(1)/www/luci-static/resources/view/mydomain/ddns.js
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mydomain/proxy.js $(1)/www/luci-static/resources/view/mydomain/proxy.js
@@ -54,6 +51,7 @@ define Package/luci-app-mydomain/install
 	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/luci-app-mydomain.json $(1)/usr/share/rpcd/acl.d/luci-app-mydomain.json
 endef
 
-$(eval $(call BuildPackage,luci-app-mydomain))
+include $(TOPDIR)/feeds/luci/luci.mk
+
 
 
