@@ -31,7 +31,7 @@ renew_certificate() {
             # HTTP-01 validation
             log_message "Renewing certificate for $domain using HTTP-01 validation"
             acme --issue -d "$domain" --server letsencrypt --email "$email" \
-                --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service mydomain restart"
+                --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service haproxy restart"
             ;;
         "dns")
             # DNS-01 validation
@@ -39,15 +39,15 @@ renew_certificate() {
             case "$dns_api" in
                 "dnspod")
                     acme --issue -d "$domain" --dns 01-dnspod --dnspod-token "$api_key" \
-                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service mydomain restart"
+                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service haproxy restart"
                     ;;
                 "aliyun")
                     acme --issue -d "$domain" --dns 01-aliyun --aliyun-credentials "$api_key,$secret" \
-                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service mydomain restart"
+                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service haproxy restart"
                     ;;
                 "cloudflare")
                     acme --issue -d "$domain" --dns 01-cloudflare --cf-key "$api_key" --cf-email "$secret" \
-                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service mydomain restart"
+                        --cert-file "$cert_path" --key-file "$key_path" --reloadCmd "service haproxy restart"
                     ;;
             esac
             ;;
@@ -61,20 +61,6 @@ renew_certificate() {
 . /lib/functions.sh
 
 config_load mydomain
-
-config_foreach() {
-    local cfg_type="$1"
-    shift
-    local func="$1"
-    shift
-    local section=""
-    local cfg_sections=""
-    
-    config_list_foreach "$cfg_type" "section" section
-    for section in $cfg_sections; do
-        eval $func "$section"
-    done
-}
 
 manage_certificate() {
     local cfg="$1"
