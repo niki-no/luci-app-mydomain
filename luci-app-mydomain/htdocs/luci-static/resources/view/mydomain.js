@@ -1,33 +1,42 @@
 'use strict';
 'require ui';
 'require view';
+'require util';
+'require i18n';
+'require fs';
 
 return view.extend({
 	render: function() {
+		// Helper function to build URLs
+		function buildUrl(path) {
+			var parts = path.split('/');
+			return '/cgi-bin/luci/admin/services/mydomain/' + parts[parts.length - 1];
+		}
+		
 		var buttons = [
 			{
 				name: 'ddns',
 				title: _('Dynamic DNS'),
 				desc: _('Configure Dynamic DNS for your domains'),
-				url: L.url('admin/services/mydomain/ddns')
+				url: buildUrl('admin/services/mydomain/ddns')
 			},
 			{
 				name: 'proxy',
 				title: _('Reverse Proxy'),
 				desc: _('Configure Reverse Proxy with HAProxy'),
-				url: L.url('admin/services/mydomain/proxy')
+				url: buildUrl('admin/services/mydomain/proxy')
 			},
 			{
 				name: 'cert',
 				title: _('Certificate Management'),
 				desc: _('Manage SSL/TLS certificates with ACME'),
-				url: L.url('admin/services/mydomain/cert')
+				url: buildUrl('admin/services/mydomain/cert')
 			},
 			{
 				name: 'status',
 				title: _('Status'),
 				desc: _('View status of all services'),
-				url: L.url('admin/services/mydomain/status')
+				url: buildUrl('admin/services/mydomain/status')
 			}
 		];
 
