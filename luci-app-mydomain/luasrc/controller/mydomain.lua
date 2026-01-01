@@ -5,13 +5,13 @@ function index()
 		return
 	end
 
-	local page = entry({"admin", "services", "mydomain"}, alias("admin", "services", "mydomain", "ddns"), _("MyDomain Manager"), 60)
+	local page = entry({"admin", "services", "mydomain"}, alias({"admin", "services", "mydomain", "status"}), _("MyDomain Manager"), 60)
 	page.dependent = false
 	page.acl_depends = { "luci-app-mydomain" }
 
-	entry({"admin", "services", "mydomain", "ddns"}, alias("admin", "services", "mydomain", "ddns"), _("Dynamic DNS"), 10).leaf = true
-	entry({"admin", "services", "mydomain", "proxy"}, alias("admin", "services", "mydomain", "proxy"), _("Reverse Proxy"), 20).leaf = true
-	entry({"admin", "services", "mydomain", "cert"}, alias("admin", "services", "mydomain", "cert"), _("Certificate Management"), 30).leaf = true
+	entry({"admin", "services", "mydomain", "ddns"}, template("mydomain/status"), _("Dynamic DNS"), 10).leaf = true
+	entry({"admin", "services", "mydomain", "proxy"}, template("mydomain/status"), _("Reverse Proxy"), 20).leaf = true
+	entry({"admin", "services", "mydomain", "cert"}, template("mydomain/status"), _("Certificate Management"), 30).leaf = true
 	entry({"admin", "services", "mydomain", "status"}, call("action_status"), _("Status"), 40).leaf = true
 end
 
@@ -28,8 +28,8 @@ function action_status()
 		local status = "unknown"
 		
 		if enabled == "1" then
-			local last_update = nixio.fs.readfile("/tmp/mydomain_ddns_" .. name .. ".log")
-			if last_update then
+			local timestamp_file = "/tmp/mydomain_ddns_" .. name .. ".timestamp"
+			if nixio.fs.access(timestamp_file) then
 				status = "active"
 			else
 				status = "inactive"
