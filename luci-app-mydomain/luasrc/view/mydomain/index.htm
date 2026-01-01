@@ -1,0 +1,25 @@
+<%+header%>
+<div id="content"></div>
+<script>
+  // Get the current path to determine which view module to load
+  var path = window.location.pathname.split('/');
+  var viewName = path[path.length - 1] || 'mydomain';
+  
+  // Define the view module name
+  var moduleName = viewName === 'mydomain' ? 'mydomain' : 'mydomain/' + viewName;
+  
+  // Load the LuCI framework and the view module
+  require(['luci', 'view/' + moduleName], function(luci, View) {
+    // Create a new view instance and render it
+    var view = new View();
+    view.render().then(function(html) {
+      // Append the rendered HTML to the content div
+      document.getElementById('content').appendChild(html);
+    }).catch(function(error) {
+      // Handle any errors that occur during rendering
+      console.error('Error rendering view:', error);
+      document.getElementById('content').innerHTML = '<div class="error">Failed to render view: ' + error.message + '</div>';
+    });
+  });
+</script>
+<%+footer%>
