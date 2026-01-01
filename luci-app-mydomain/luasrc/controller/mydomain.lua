@@ -9,10 +9,10 @@ function index()
 	page.dependent = false
 	page.acl_depends = { "luci-app-mydomain" }
 
-	entry({"admin", "services", "mydomain", "ddns"}, template("mydomain/status"), _("Dynamic DNS"), 10).leaf = true
-	entry({"admin", "services", "mydomain", "proxy"}, template("mydomain/status"), _("Reverse Proxy"), 20).leaf = true
-	entry({"admin", "services", "mydomain", "cert"}, template("mydomain/status"), _("Certificate Management"), 30).leaf = true
-	entry({"admin", "services", "mydomain", "status"}, call("action_status"), _("Status"), 40).leaf = true
+	entry({"admin", "services", "mydomain", "ddns"}, call("action_status"), _("Dynamic DNS"), 10).leaf = false
+	entry({"admin", "services", "mydomain", "proxy"}, call("action_status"), _("Reverse Proxy"), 20).leaf = false
+	entry({"admin", "services", "mydomain", "cert"}, call("action_status"), _("Certificate Management"), 30).leaf = false
+	entry({"admin", "services", "mydomain", "status"}, call("action_status"), _("Status"), 40).leaf = false
 end
 
 function action_status()
