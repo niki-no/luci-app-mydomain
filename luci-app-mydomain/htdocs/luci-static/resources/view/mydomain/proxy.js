@@ -3,6 +3,7 @@
 'require ui';
 'require form';
 'require tools.widgets as widgets';
+'require fs';
 
 return view.extend({
 	render: function() {
@@ -39,12 +40,11 @@ return view.extend({
 		o = s.option(form.Value, 'cert', _('SSL Certificate'));
 		o.depends('protocol', 'https');
 		// 获取证书配置
-		L.resolveDefault(LFS.list('/etc/ssl/certs/')).then(function(files) {
-			if (files) {
+		fs.glob('/etc/ssl/certs/*.crt').then(function(files) {
+			if (files && files.length > 0) {
 				files.forEach(function(file) {
-					if (file.name && file.name.endsWith('.crt')) {
-						o.value(file.name.replace('.crt', ''), file.name);
-					}
+					var name = file.replace(/\/etc\/ssl\/certs\/(.*?)\.crt/, '$1');
+					o.value(name, file);
 				});
 			}
 		});
